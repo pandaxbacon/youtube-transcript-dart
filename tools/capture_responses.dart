@@ -1,5 +1,6 @@
 /// Tool to capture real YouTube responses for use in tests.
 /// Run this once to generate test fixtures.
+library;
 
 import 'dart:convert';
 import 'dart:io';
