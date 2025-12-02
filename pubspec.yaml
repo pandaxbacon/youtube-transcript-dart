@@ -10,16 +10,8 @@ topics:
   - youtube
   - transcript
   - subtitles
-  - captions
   - youtube-api
-  - youtube-video
   - cli
-  - youtube-transcript
-  - youtube-subtitles
-  - asr
-  - translation
-  - webvtt
-  - srt
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
