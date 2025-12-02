@@ -1,10 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:test/test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:youtube_transcript_api/youtube_transcript_api.dart';
-import 'package:youtube_transcript_api/src/http/http_client.dart';
 
 void main() {
   group('YouTubeTranscriptApi', () {
