@@ -20,10 +20,7 @@ Future<void> basicExample() async {
   try {
     // Fetch transcript (replace with a real video ID)
     print('Fetching transcript...');
-    final transcript = await api.fetch(
-      'dQw4w9WgXcQ',
-      languages: ['en'],
-    );
+    final transcript = await api.fetch('dQw4w9WgXcQ', languages: ['en']);
 
     print('Video ID: ${transcript.videoId}');
     print('Language: ${transcript.language}');

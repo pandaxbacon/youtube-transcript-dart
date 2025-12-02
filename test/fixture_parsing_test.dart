@@ -8,8 +8,9 @@ void main() {
   group('Fixture Parsing Tests', () {
     test('parses real YouTube transcript XML from fixture', () async {
       // Load the real transcript XML captured from YouTube
-      final transcriptXml =
-          await File('test/fixtures/transcript.xml').readAsString();
+      final transcriptXml = await File(
+        'test/fixtures/transcript.xml',
+      ).readAsString();
 
       // Parse it using the REAL parser code
       final snippets = TranscriptParser.parseXml(transcriptXml);
@@ -35,8 +36,9 @@ void main() {
     });
 
     test('parses real transcript with HTML entities', () async {
-      final transcriptXml =
-          await File('test/fixtures/transcript.xml').readAsString();
+      final transcriptXml = await File(
+        'test/fixtures/transcript.xml',
+      ).readAsString();
 
       final snippets = TranscriptParser.parseXml(transcriptXml);
 

@@ -13,10 +13,7 @@ class TranscriptList extends IterableBase<Transcript> {
   /// The list of available transcripts.
   final List<Transcript> transcripts;
 
-  TranscriptList({
-    required this.videoId,
-    required this.transcripts,
-  });
+  TranscriptList({required this.videoId, required this.transcripts});
 
   @override
   Iterator<Transcript> get iterator => transcripts.iterator;

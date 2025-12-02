@@ -28,11 +28,7 @@ class TranscriptSnippet {
 
   /// Converts this snippet to a JSON map.
   Map<String, dynamic> toJson() {
-    return {
-      'text': text,
-      'start': start,
-      'duration': duration,
-    };
+    return {'text': text, 'start': start, 'duration': duration};
   }
 
   @override

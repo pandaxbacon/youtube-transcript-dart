@@ -64,11 +64,7 @@ class TranscriptHttpClient {
       if (_customClient != null) {
         // Use custom client (for testing)
         response = await _customClient!
-            .post(
-              Uri.parse(url),
-              headers: mergedHeaders,
-              body: body,
-            )
+            .post(Uri.parse(url), headers: mergedHeaders, body: body)
             .timeout(timeout);
       } else if (proxyConfig != null) {
         // Use proxy
@@ -81,11 +77,7 @@ class TranscriptHttpClient {
       } else {
         // Direct request
         response = await http
-            .post(
-              Uri.parse(url),
-              headers: mergedHeaders,
-              body: body,
-            )
+            .post(Uri.parse(url), headers: mergedHeaders, body: body)
             .timeout(timeout);
       }
 
@@ -104,10 +96,7 @@ class TranscriptHttpClient {
   }
 
   /// Makes a GET request to the specified URL.
-  Future<HttpResponse> get(
-    String url, {
-    Map<String, String>? headers,
-  }) async {
+  Future<HttpResponse> get(String url, {Map<String, String>? headers}) async {
     final mergedHeaders = {
       ...defaultHeaders,
       if (proxyConfig != null) ...proxyConfig!.getHeaders(),
@@ -124,11 +113,7 @@ class TranscriptHttpClient {
             .timeout(timeout);
       } else if (proxyConfig != null) {
         // Use proxy
-        response = await _makeProxiedRequest(
-          url,
-          mergedHeaders,
-          method: 'GET',
-        );
+        response = await _makeProxiedRequest(url, mergedHeaders, method: 'GET');
       } else {
         // Direct request
         response = await http

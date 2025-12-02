@@ -25,11 +25,7 @@ void main(List<String> arguments) async {
       defaultsTo: 'text',
       allowed: ['text', 'text-ts', 'json', 'json-meta', 'vtt', 'srt', 'csv'],
     )
-    ..addOption(
-      'output',
-      abbr: 'o',
-      help: 'Output file path (default: stdout)',
-    )
+    ..addOption('output', abbr: 'o', help: 'Output file path (default: stdout)')
     ..addFlag(
       'list',
       help: 'List all available transcripts for the video',
@@ -136,10 +132,7 @@ void _printUsage(ArgParser parser) {
   print('  youtube_transcript_api dQw4w9WgXcQ -f srt -o output.srt');
 }
 
-Future<void> _listTranscripts(
-  YouTubeTranscriptApi api,
-  String videoId,
-) async {
+Future<void> _listTranscripts(YouTubeTranscriptApi api, String videoId) async {
   print('Fetching available transcripts for video: $videoId');
   print('');
 
@@ -206,8 +199,9 @@ Future<void> _fetchTranscript(
   }
 
   // Fetch the transcript content
-  final fetchedTranscript =
-      await transcript.fetch(preserveFormatting: preserveFormatting);
+  final fetchedTranscript = await transcript.fetch(
+    preserveFormatting: preserveFormatting,
+  );
 
   // Format the transcript
   final formatted = _formatTranscript(fetchedTranscript, format);

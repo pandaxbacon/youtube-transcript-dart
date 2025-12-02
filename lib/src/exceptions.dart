@@ -17,19 +17,13 @@ class TranscriptException implements Exception {
 /// Thrown when the YouTube video is unavailable.
 class VideoUnavailableException extends TranscriptException {
   VideoUnavailableException(String videoId)
-      : super(
-          'The video is not available',
-          videoId: videoId,
-        );
+      : super('The video is not available', videoId: videoId);
 }
 
 /// Thrown when transcripts are disabled for the video.
 class TranscriptsDisabledException extends TranscriptException {
   TranscriptsDisabledException(String videoId)
-      : super(
-          'Subtitles are disabled for this video',
-          videoId: videoId,
-        );
+      : super('Subtitles are disabled for this video', videoId: videoId);
 }
 
 /// Thrown when no transcript is found for the requested languages.
@@ -132,21 +126,14 @@ class IpBlockedException extends RequestBlockedException {
 /// Thrown when the video ID is invalid.
 class InvalidVideoIdException extends TranscriptException {
   InvalidVideoIdException(String videoId)
-      : super(
-          'Invalid video ID format',
-          videoId: videoId,
-        );
+      : super('Invalid video ID format', videoId: videoId);
 }
 
 /// Thrown when there's an error fetching the transcript from YouTube.
 class TranscriptFetchException extends TranscriptException {
   final Object? cause;
 
-  TranscriptFetchException(
-    super.message, {
-    super.videoId,
-    this.cause,
-  });
+  TranscriptFetchException(super.message, {super.videoId, this.cause});
 
   @override
   String toString() {
@@ -161,11 +148,7 @@ class TranscriptFetchException extends TranscriptException {
 class TranscriptParseException extends TranscriptException {
   final Object? cause;
 
-  TranscriptParseException(
-    super.message, {
-    super.videoId,
-    this.cause,
-  });
+  TranscriptParseException(super.message, {super.videoId, this.cause});
 
   @override
   String toString() {

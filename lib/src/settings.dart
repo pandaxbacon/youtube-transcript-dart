@@ -13,12 +13,10 @@ const String innertubeApiUrl =
 /// We pretend to be an Android client to avoid certain YouTube restrictions
 /// and anti-bot measures like PoToken requirements.
 const Map<String, dynamic> innertubeContext = {
-  'client': {
-    'clientName': 'ANDROID',
-    'clientVersion': '20.10.38',
-  },
+  'client': {'clientName': 'ANDROID', 'clientVersion': '20.10.38'},
 };
 
 /// Regular expression pattern to extract the InnerTube API key from HTML.
-final RegExp innertubeApiKeyPattern =
-    RegExp(r'"INNERTUBE_API_KEY":\s*"([a-zA-Z0-9_-]+)"');
+final RegExp innertubeApiKeyPattern = RegExp(
+  r'"INNERTUBE_API_KEY":\s*"([a-zA-Z0-9_-]+)"',
+);

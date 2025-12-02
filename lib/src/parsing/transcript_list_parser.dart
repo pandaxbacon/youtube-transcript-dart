@@ -178,10 +178,7 @@ class TranscriptListParser {
         throw TranscriptsDisabledException(videoId);
       }
 
-      return TranscriptList(
-        videoId: videoId,
-        transcripts: transcripts,
-      );
+      return TranscriptList(videoId: videoId, transcripts: transcripts);
     } catch (e) {
       if (e is TranscriptException) rethrow;
       throw TranscriptParseException(

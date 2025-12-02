@@ -18,8 +18,9 @@ Future<void> main() async {
     print('1. Fetching YouTube HTML page...');
     final videoUrl = watchUrl.replaceAll('{video_id}', videoId);
     final htmlResponse = await httpClient.get(videoUrl);
-    await File('test/fixtures/youtube_page.html')
-        .writeAsString(htmlResponse.body);
+    await File(
+      'test/fixtures/youtube_page.html',
+    ).writeAsString(htmlResponse.body);
     print('   ✅ Saved to: test/fixtures/youtube_page.html\n');
 
     // 2. Extract API key and capture InnerTube response
@@ -33,17 +34,15 @@ Future<void> main() async {
     final innertubeResponse = await httpClient.post(
       innertubeUrl,
       headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'context': innertubeContext,
-        'videoId': videoId,
-      }),
+      body: json.encode({'context': innertubeContext, 'videoId': videoId}),
     );
 
     // Save pretty-printed JSON
     final innertubeData = json.decode(innertubeResponse.body);
     final prettyJson = JsonEncoder.withIndent('  ').convert(innertubeData);
-    await File('test/fixtures/innertube_response.json')
-        .writeAsString(prettyJson);
+    await File(
+      'test/fixtures/innertube_response.json',
+    ).writeAsString(prettyJson);
     print('   ✅ Saved to: test/fixtures/innertube_response.json\n');
 
     // 3. Capture transcript XML
@@ -53,15 +52,18 @@ Future<void> main() async {
         captions['playerCaptionsTracklistRenderer'] as Map<String, dynamic>;
     final tracks = renderer['captionTracks'] as List<dynamic>;
     final firstTrack = tracks.first as Map<String, dynamic>;
-    final transcriptUrl =
-        (firstTrack['baseUrl'] as String).replaceAll('&fmt=srv3', '');
+    final transcriptUrl = (firstTrack['baseUrl'] as String).replaceAll(
+      '&fmt=srv3',
+      '',
+    );
 
     print('   URL: ${transcriptUrl.substring(0, 80)}...\n');
 
     print('5. Fetching transcript XML...');
     final transcriptResponse = await httpClient.get(transcriptUrl);
-    await File('test/fixtures/transcript.xml')
-        .writeAsString(transcriptResponse.body);
+    await File(
+      'test/fixtures/transcript.xml',
+    ).writeAsString(transcriptResponse.body);
     print('   ✅ Saved to: test/fixtures/transcript.xml\n');
 
     print('═══════════════════════════════════════════════════════════');

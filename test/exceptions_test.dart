@@ -4,10 +4,7 @@ import 'package:youtube_transcript_api/youtube_transcript_api.dart';
 void main() {
   group('Exceptions', () {
     test('TranscriptException includes video ID', () {
-      final exception = TranscriptException(
-        'Test error',
-        videoId: 'test123',
-      );
+      final exception = TranscriptException('Test error', videoId: 'test123');
 
       expect(exception.message, equals('Test error'));
       expect(exception.videoId, equals('test123'));

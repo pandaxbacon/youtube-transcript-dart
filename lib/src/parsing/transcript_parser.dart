@@ -112,18 +112,12 @@ class TranscriptParser {
         .replaceAll('&#39;', "'")
         .replaceAll('&nbsp;', ' ')
         // Decode numeric entities
-        .replaceAllMapped(
-      RegExp(r'&#(\d+);'),
-      (match) {
-        final code = int.tryParse(match.group(1) ?? '');
-        return code != null ? String.fromCharCode(code) : match.group(0)!;
-      },
-    ).replaceAllMapped(
-      RegExp(r'&#x([0-9A-Fa-f]+);'),
-      (match) {
-        final code = int.tryParse(match.group(1) ?? '', radix: 16);
-        return code != null ? String.fromCharCode(code) : match.group(0)!;
-      },
-    );
+        .replaceAllMapped(RegExp(r'&#(\d+);'), (match) {
+      final code = int.tryParse(match.group(1) ?? '');
+      return code != null ? String.fromCharCode(code) : match.group(0)!;
+    }).replaceAllMapped(RegExp(r'&#x([0-9A-Fa-f]+);'), (match) {
+      final code = int.tryParse(match.group(1) ?? '', radix: 16);
+      return code != null ? String.fromCharCode(code) : match.group(0)!;
+    });
   }
 }

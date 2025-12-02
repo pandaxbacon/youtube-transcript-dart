@@ -67,11 +67,7 @@ class GenericProxyConfig extends ProxyConfig {
   /// Optional custom headers to include in requests.
   final Map<String, String>? customHeaders;
 
-  GenericProxyConfig({
-    this.httpUrl,
-    this.httpsUrl,
-    this.customHeaders,
-  }) {
+  GenericProxyConfig({this.httpUrl, this.httpsUrl, this.customHeaders}) {
     if (httpUrl == null && httpsUrl == null) {
       throw ArgumentError(
         'At least one of httpUrl or httpsUrl must be provided',

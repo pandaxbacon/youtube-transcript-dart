@@ -163,13 +163,8 @@ class YouTubeTranscriptApi {
 
     final response = await _httpClient.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: json.encode({
-        'context': innertubeContext,
-        'videoId': videoId,
-      }),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'context': innertubeContext, 'videoId': videoId}),
     );
 
     _checkResponseStatus(response.statusCode, videoId);
