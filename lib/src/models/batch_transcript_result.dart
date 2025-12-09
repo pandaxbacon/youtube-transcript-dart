@@ -23,7 +23,7 @@ class BatchTranscriptResult {
     this.transcript,
     this.error,
   }) : assert(
-          (transcript == null) != (error == null),
+          (transcript != null) != (error != null),
           'Either transcript or error must be provided, but not both',
         );
 

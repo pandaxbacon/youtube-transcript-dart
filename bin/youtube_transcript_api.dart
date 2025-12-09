@@ -84,11 +84,10 @@ void main(List<String> arguments) async {
         .map((s) => s.trim())
         .toList();
     final maxConcurrentValue = results['max-concurrent'] as String?;
-    final rawMaxConcurrent = maxConcurrentValue ?? 'missing';
     final maxConcurrent = int.tryParse(maxConcurrentValue ?? '5');
     if (maxConcurrent == null || maxConcurrent < 1) {
       throw FormatException(
-        'Invalid value for --max-concurrent: $rawMaxConcurrent '
+        'Invalid value for --max-concurrent: ${maxConcurrentValue ?? "missing"} '
         '(must be a positive integer)',
       );
     }

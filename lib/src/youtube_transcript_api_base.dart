@@ -13,9 +13,14 @@ import 'parsing/transcript_parser.dart';
 import 'parsing/transcript_list_parser.dart';
 import 'settings.dart';
 
+// Default delay between batch request groups to avoid hammering YouTube.
 const _batchDelay = Duration(milliseconds: 200);
+
+// Maximum delay applied when backing off after retryable errors.
 const _maxBatchBackoff = Duration(seconds: 2);
-const _maxBatchRetries = 2;
+
+// Total attempts permitted for a single video when retrying fetches.
+const _maxBatchRetries = 3;
 
 /// Main API class for fetching YouTube transcripts.
 ///
@@ -439,7 +444,9 @@ class YouTubeTranscriptApi {
     List<String> languages,
     bool preserveFormatting,
   ) async {
-    for (var attempt = 0; attempt <= _maxBatchRetries; attempt++) {
+    TranscriptException? lastError;
+
+    for (var attempt = 0; attempt < _maxBatchRetries; attempt++) {
       try {
         final transcript = await fetch(
           videoId,
@@ -449,8 +456,9 @@ class YouTubeTranscriptApi {
 
         return BatchTranscriptResult.success(videoId, transcript);
       } on TranscriptException catch (e) {
+        lastError = e;
         final shouldRetry =
-            attempt < _maxBatchRetries && _shouldRetryException(e);
+            attempt + 1 < _maxBatchRetries && _shouldRetryException(e);
 
         if (shouldRetry) {
           final multiplier = 1 << attempt;
@@ -473,10 +481,10 @@ class YouTubeTranscriptApi {
       }
     }
 
-    return BatchTranscriptResult.failure(
-      videoId,
-      TranscriptFetchException('Failed to fetch transcript', videoId: videoId),
-    );
+    final error = lastError ??
+        TranscriptFetchException('Failed to fetch transcript',
+            videoId: videoId);
+    return BatchTranscriptResult.failure(videoId, error);
   }
 
   bool _shouldRetryException(TranscriptException exception) {
