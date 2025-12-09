@@ -22,7 +22,10 @@ class BatchTranscriptResult {
     required this.videoId,
     this.transcript,
     this.error,
-  });
+  }) : assert(
+          (transcript == null) != (error == null),
+          'Either transcript or error must be provided, but not both',
+        );
 
   /// Creates a successful result.
   factory BatchTranscriptResult.success(

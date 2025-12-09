@@ -15,6 +15,7 @@ import 'parsing/transcript_list_parser.dart';
 import 'settings.dart';
 
 const _batchDelay = Duration(milliseconds: 200);
+const _maxBatchBackoff = Duration(seconds: 2);
 const _maxBatchRetries = 2;
 
 /// Main API class for fetching YouTube transcripts.
@@ -200,33 +201,34 @@ class YouTubeTranscriptApi {
       );
     }
 
-    final youtube = YoutubeExplode();
-
     try {
-      final playlist = await youtube.playlists.get(playlistUrl);
-      final videos = youtube.playlists.getVideos(playlist.id);
-      final videoIds = <String>[];
+      final youtube = YoutubeExplode();
+      try {
+        final playlist = await youtube.playlists.get(playlistUrl);
+        final videos = youtube.playlists.getVideos(playlist.id);
+        final videoIds = <String>[];
 
-      await for (final video in videos) {
-        videoIds.add(video.id.value);
-        if (videoIds.length >= maxVideos) {
-          break;
+        await for (final video in videos) {
+          videoIds.add(video.id.value);
+          if (videoIds.length >= maxVideos) {
+            break;
+          }
         }
-      }
 
-      return await fetchBatch(
-        videoIds,
-        languages: languages,
-        maxConcurrent: maxConcurrent,
-        onProgress: onProgress,
-      );
+        return await fetchBatch(
+          videoIds,
+          languages: languages,
+          maxConcurrent: maxConcurrent,
+          onProgress: onProgress,
+        );
+      } finally {
+        youtube.close();
+      }
     } catch (e) {
       throw TranscriptFetchException(
         'Failed to fetch playlist transcripts',
         cause: e,
       );
-    } finally {
-      youtube.close();
     }
   }
 
@@ -444,8 +446,12 @@ class YouTubeTranscriptApi {
                 e is TranscriptFetchException);
 
         if (shouldRetry) {
-          final delay = _batchDelay * (1 << attempt);
-          await Future.delayed(delay);
+          final multiplier = 1 << attempt;
+          final delayMs = _batchDelay.inMilliseconds * multiplier;
+          final cappedDelayMs = delayMs > _maxBatchBackoff.inMilliseconds
+              ? _maxBatchBackoff.inMilliseconds
+              : delayMs;
+          await Future.delayed(Duration(milliseconds: cappedDelayMs));
           continue;
         }
 
