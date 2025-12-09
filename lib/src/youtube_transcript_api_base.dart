@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:youtube_explode_dart/youtube_explode_dart.dart'
-    hide VideoUnavailableException;
+import 'package:youtube_explode_dart/youtube_explode_dart.dart' as yt;
 
 import 'exceptions.dart';
 import 'http/http_client.dart';
@@ -201,8 +200,18 @@ class YouTubeTranscriptApi {
       );
     }
 
+    final playlistUri = Uri.tryParse(playlistUrl);
+    final hasPlaylistId = playlistUri?.queryParameters.containsKey('list') ??
+        playlistUrl.contains('list=');
+    if (playlistUri == null ||
+        !playlistUri.hasScheme ||
+        !playlistUri.hasAuthority ||
+        !hasPlaylistId) {
+      throw FormatException('Invalid playlist URL: $playlistUrl');
+    }
+
     try {
-      final youtube = YoutubeExplode();
+      final youtube = yt.YoutubeExplode();
       try {
         final playlist = await youtube.playlists.get(playlistUrl);
         final videos = youtube.playlists.getVideos(playlist.id);
@@ -440,10 +449,8 @@ class YouTubeTranscriptApi {
 
         return BatchTranscriptResult.success(videoId, transcript);
       } on TranscriptException catch (e) {
-        final shouldRetry = attempt < _maxBatchRetries &&
-            (e is TooManyRequestsException ||
-                e is RequestBlockedException ||
-                e is TranscriptFetchException);
+        final shouldRetry =
+            attempt < _maxBatchRetries && _shouldRetryException(e);
 
         if (shouldRetry) {
           final multiplier = 1 << attempt;
@@ -470,6 +477,12 @@ class YouTubeTranscriptApi {
       videoId,
       TranscriptFetchException('Failed to fetch transcript', videoId: videoId),
     );
+  }
+
+  bool _shouldRetryException(TranscriptException exception) {
+    return exception is TooManyRequestsException ||
+        exception is RequestBlockedException ||
+        exception is TranscriptFetchException;
   }
 
   /// Internal method to fetch transcript content from a URL.
