@@ -1,13 +1,21 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart'
+    hide VideoUnavailableException;
+
 import 'exceptions.dart';
 import 'http/http_client.dart';
 import 'http/proxy_config.dart';
+import 'models/batch_transcript_result.dart';
 import 'models/fetched_transcript.dart';
 import 'models/transcript.dart';
 import 'models/transcript_list.dart';
 import 'parsing/transcript_parser.dart';
 import 'parsing/transcript_list_parser.dart';
 import 'settings.dart';
+
+const _batchDelay = Duration(milliseconds: 200);
+const _maxBatchRetries = 2;
 
 /// Main API class for fetching YouTube transcripts.
 ///
@@ -83,6 +91,142 @@ class YouTubeTranscriptApi {
         videoId: videoId,
         cause: e,
       );
+    }
+  }
+
+  /// Fetches transcripts for multiple videos in parallel.
+  ///
+  /// [videoIds] - List of YouTube video IDs to fetch.
+  /// [languages] - Optional prioritized list of language codes for all videos.
+  /// [preserveFormatting] - If true, preserves HTML formatting in text.
+  /// [maxConcurrent] - Maximum number of concurrent requests (default: 5).
+  /// [onProgress] - Optional callback for progress updates.
+  /// [continueOnError] - If true, continues fetching even if some videos fail.
+  ///
+  /// Returns a map of video IDs to [BatchTranscriptResult] values.
+  Future<Map<String, BatchTranscriptResult>> fetchBatch(
+    List<String> videoIds, {
+    List<String>? languages,
+    bool preserveFormatting = false,
+    int maxConcurrent = 5,
+    void Function(int completed, int total)? onProgress,
+    bool continueOnError = true,
+  }) async {
+    if (maxConcurrent < 1) {
+      throw ArgumentError.value(
+        maxConcurrent,
+        'maxConcurrent',
+        'maxConcurrent must be at least 1',
+      );
+    }
+
+    if (videoIds.isEmpty) {
+      onProgress?.call(0, 0);
+      return {};
+    }
+
+    final total = videoIds.length;
+    final results = <String, BatchTranscriptResult>{};
+    final effectiveLanguages = languages ?? ['en'];
+    var completed = 0;
+    final validVideoIds = <String>[];
+
+    for (final videoId in videoIds) {
+      try {
+        _validateVideoId(videoId);
+        validVideoIds.add(videoId);
+      } on TranscriptException catch (e) {
+        final failure = BatchTranscriptResult.failure(videoId, e);
+        results[videoId] = failure;
+        completed++;
+        onProgress?.call(completed, total);
+
+        if (!continueOnError) {
+          throw e;
+        }
+      }
+    }
+
+    for (var i = 0; i < validVideoIds.length; i += maxConcurrent) {
+      final batch = validVideoIds.skip(i).take(maxConcurrent).toList();
+      final batchResults = await Future.wait(
+        batch.map(
+          (videoId) =>
+              _fetchWithRetry(videoId, effectiveLanguages, preserveFormatting),
+        ),
+      );
+
+      for (final result in batchResults) {
+        results[result.videoId] = result;
+        completed++;
+        onProgress?.call(completed, total);
+
+        if (result.isFailure && !continueOnError) {
+          throw result.error!;
+        }
+      }
+
+      if (i + maxConcurrent < validVideoIds.length) {
+        await Future.delayed(_batchDelay);
+      }
+    }
+
+    return results;
+  }
+
+  /// Fetches transcripts for videos in a YouTube playlist.
+  ///
+  /// [playlistUrl] - The full YouTube playlist URL.
+  /// [languages] - Optional prioritized list of language codes.
+  /// [maxVideos] - Maximum number of videos to fetch (default: 50).
+  /// [maxConcurrent] - Maximum number of concurrent requests (default: 5).
+  /// [onProgress] - Optional callback for progress updates.
+  Future<Map<String, BatchTranscriptResult>> fetchPlaylist(
+    String playlistUrl, {
+    List<String>? languages,
+    int maxVideos = 50,
+    int maxConcurrent = 5,
+    void Function(int completed, int total)? onProgress,
+  }) async {
+    if (playlistUrl.isEmpty) {
+      throw ArgumentError('playlistUrl cannot be empty');
+    }
+
+    if (maxVideos < 1) {
+      throw ArgumentError.value(
+        maxVideos,
+        'maxVideos',
+        'maxVideos must be at least 1',
+      );
+    }
+
+    final youtube = YoutubeExplode();
+
+    try {
+      final playlist = await youtube.playlists.get(playlistUrl);
+      final videos = youtube.playlists.getVideos(playlist.id);
+      final videoIds = <String>[];
+
+      await for (final video in videos) {
+        videoIds.add(video.id.value);
+        if (videoIds.length >= maxVideos) {
+          break;
+        }
+      }
+
+      return await fetchBatch(
+        videoIds,
+        languages: languages,
+        maxConcurrent: maxConcurrent,
+        onProgress: onProgress,
+      );
+    } catch (e) {
+      throw TranscriptFetchException(
+        'Failed to fetch playlist transcripts',
+        cause: e,
+      );
+    } finally {
+      youtube.close();
     }
   }
 
@@ -277,6 +421,49 @@ class YouTubeTranscriptApi {
   ) async {
     final transcriptList = await list(videoId);
     return transcriptList.findGeneratedTranscript(languages);
+  }
+
+  Future<BatchTranscriptResult> _fetchWithRetry(
+    String videoId,
+    List<String> languages,
+    bool preserveFormatting,
+  ) async {
+    for (var attempt = 0; attempt <= _maxBatchRetries; attempt++) {
+      try {
+        final transcript = await fetch(
+          videoId,
+          languages: languages,
+          preserveFormatting: preserveFormatting,
+        );
+
+        return BatchTranscriptResult.success(videoId, transcript);
+      } on TranscriptException catch (e) {
+        final shouldRetry = attempt < _maxBatchRetries &&
+            (e is TooManyRequestsException ||
+                e is RequestBlockedException ||
+                e is TranscriptFetchException);
+
+        if (shouldRetry) {
+          final delay = _batchDelay * (1 << attempt);
+          await Future.delayed(delay);
+          continue;
+        }
+
+        return BatchTranscriptResult.failure(videoId, e);
+      } catch (e) {
+        final wrappedError = TranscriptFetchException(
+          'Failed to fetch transcript',
+          videoId: videoId,
+          cause: e,
+        );
+        return BatchTranscriptResult.failure(videoId, wrappedError);
+      }
+    }
+
+    return BatchTranscriptResult.failure(
+      videoId,
+      TranscriptFetchException('Failed to fetch transcript', videoId: videoId),
+    );
   }
 
   /// Internal method to fetch transcript content from a URL.

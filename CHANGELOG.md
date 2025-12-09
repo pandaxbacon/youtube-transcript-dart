@@ -77,10 +77,14 @@ A complete Dart port of the Python youtube-transcript-api library with enhanced 
 
 ## [Unreleased]
 
+### Added
+- Batch/bulk transcript fetching with concurrency controls and progress callbacks
+- Playlist helper to fetch transcripts by playlist URL
+- CLI batch options (`--batch`, `--batch-file`, `--max-concurrent`, `--show-progress`)
+- Batch usage example and documentation updates
+
 ### Planned
-- Batch fetching for multiple videos
 - Caching support to reduce API calls
 - Rate limiting protection
 - Cookie-based authentication for restricted videos
 - Enhanced error recovery and retry logic
-

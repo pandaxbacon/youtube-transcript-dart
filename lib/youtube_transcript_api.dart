@@ -35,6 +35,7 @@ export 'src/models/transcript.dart';
 export 'src/models/transcript_list.dart';
 export 'src/models/transcript_snippet.dart';
 export 'src/models/translation_language.dart';
+export 'src/models/batch_transcript_result.dart';
 
 // Exceptions
 export 'src/exceptions.dart'
