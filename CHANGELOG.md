@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2026-07-25
+
+### Fixed
+
+- **Webshare proxy URL format:** Fixed the proxy URL to use the correct
+  `username-location-rotate` format instead of appending the country filter
+  to the hostname. Added `-rotate` suffix for proper IP rotation.
+- Duplicate `-rotate` suffix in username is now prevented.
+
+### Added
+
+- `WebshareProxyConfig` now supports multiple location filters via the
+  `locations` parameter (e.g., `locations: ['DE', 'US']`).
+- `WebshareProxyConfig.withLocation()` convenience constructor for single
+  location backward compatibility.
+
 ## [1.0.3] - 2026-07-25
 
 ### Added

@@ -11,7 +11,7 @@ void main() {
         expect(config.password, equals('pass'));
         expect(config.host, equals('p.webshare.io'));
         expect(config.port, equals(80));
-        expect(config.location, isNull);
+        expect(config.locations, isNull);
       });
 
       test('creates with custom host and port', () {
@@ -26,39 +26,62 @@ void main() {
         expect(config.port, equals(8080));
       });
 
-      test('creates with location', () {
+      test('creates with single location', () {
         final config = WebshareProxyConfig(
           username: 'user',
           password: 'pass',
-          location: 'US',
+          locations: ['US'],
         );
 
-        expect(config.location, equals('US'));
+        expect(config.locations, equals(['US']));
       });
 
-      test('getHttpProxyUrl returns correct format', () {
+      test('creates with multiple locations', () {
+        final config = WebshareProxyConfig(
+          username: 'user',
+          password: 'pass',
+          locations: ['US', 'DE'],
+        );
+
+        expect(config.locations, equals(['US', 'DE']));
+      });
+
+      test('getHttpProxyUrl returns correct format with -rotate suffix', () {
         final config = WebshareProxyConfig(username: 'user', password: 'pass');
 
         final url = config.getHttpProxyUrl();
-        expect(url, equals('http://user:pass@p.webshare.io:80'));
+        expect(url, equals('http://user-rotate:pass@p.webshare.io:80'));
       });
 
       test('getHttpsProxyUrl returns correct format', () {
         final config = WebshareProxyConfig(username: 'user', password: 'pass');
 
         final url = config.getHttpsProxyUrl();
-        expect(url, equals('http://user:pass@p.webshare.io:80'));
+        expect(url, equals('http://user-rotate:pass@p.webshare.io:80'));
       });
 
-      test('getHttpProxyUrl includes location when set', () {
+      test('getHttpProxyUrl includes country filter when locations set', () {
         final config = WebshareProxyConfig(
           username: 'user',
           password: 'pass',
-          location: 'US',
+          locations: ['US'],
         );
 
         final url = config.getHttpProxyUrl();
         expect(url, contains('-country-US'));
+        expect(url, contains('-rotate'));
+      });
+
+      test('getHttpProxyUrl includes multiple location filters', () {
+        final config = WebshareProxyConfig(
+          username: 'user',
+          password: 'pass',
+          locations: ['DE', 'US'],
+        );
+
+        final url = config.getHttpProxyUrl();
+        expect(url, contains('-country-DE-country-US'));
+        expect(url, contains('-rotate'));
       });
 
       test('getHeaders returns empty map', () {
@@ -71,13 +94,36 @@ void main() {
         final config = WebshareProxyConfig(
           username: 'user',
           password: 'pass',
-          location: 'US',
+          locations: ['US'],
         );
 
         final str = config.toString();
         expect(str, contains('WebshareProxyConfig'));
         expect(str, contains('user'));
         expect(str, contains('US'));
+      });
+
+      test('WebshareProxyConfig.withLocation creates with single location', () {
+        final config = WebshareProxyConfig.withLocation(
+          username: 'user',
+          password: 'pass',
+          location: 'US',
+        );
+
+        expect(config.locations, equals(['US']));
+        final url = config.getHttpProxyUrl();
+        expect(url, contains('-country-US-rotate'));
+      });
+
+      test('duplicate -rotate suffix is prevented', () {
+        final config = WebshareProxyConfig(
+          username: 'user-rotate',
+          password: 'pass',
+        );
+
+        final url = config.getHttpProxyUrl();
+        // Should be user-rotate not user-rotate-rotate
+        expect(url, equals('http://user-rotate:pass@p.webshare.io:80'));
       });
     });
 
