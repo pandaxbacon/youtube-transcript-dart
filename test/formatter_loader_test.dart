@@ -66,10 +66,11 @@ void main() {
     test('loads all supported types', () {
       final types = FormatterLoader.supportedTypes;
       expect(
-          types,
-          containsAll(
-            ['json', 'pretty', 'text', 'text-ts', 'webvtt', 'srt', 'csv'],
-          ));
+        types,
+        containsAll(
+          ['json', 'pretty', 'text', 'text-ts', 'webvtt', 'srt', 'csv'],
+        ),
+      );
 
       for (final type in types) {
         final formatter = FormatterLoader.load(type);
