@@ -17,6 +17,7 @@ This is a Dart port of the popular Python library [youtube-transcript-api](https
 - ✅ Multiple language support with automatic fallback
 - ✅ Translation support for available transcripts
 - ✅ Multiple output formats (Text, JSON, WebVTT, SRT, CSV)
+- ✅ Batch/bulk fetching for multiple videos and playlists
 - ✅ Proxy support (including Webshare rotating proxies)
 - ✅ No API key required
 - ✅ Works in both Dart and Flutter applications
@@ -143,6 +144,46 @@ final csvFormatter = CsvFormatter();
 print(csvFormatter.format(transcript));
 ```
 
+### Batch Fetching
+
+```dart
+final results = await api.fetchBatch(
+  [
+    'dQw4w9WgXcQ',
+    '6-87bwBCyos',
+    'jNQXAC9IVRw',
+  ],
+  maxConcurrent: 3,
+  onProgress: (completed, total) {
+    print('Progress: $completed/$total');
+  },
+);
+
+for (final entry in results.entries) {
+  final videoId = entry.key;
+  final result = entry.value;
+
+  if (result.isSuccess) {
+    print('✅ $videoId: ${result.transcript!.snippets.length} snippets');
+  } else {
+    print('❌ $videoId: ${result.error}');
+  }
+}
+```
+
+### Playlist Fetching
+
+```dart
+final playlistResults = await api.fetchPlaylist(
+  'https://www.youtube.com/playlist?list=PLAYLIST_ID',
+  maxVideos: 10,
+  maxConcurrent: 2,
+  onProgress: (completed, total) {
+    print('Progress: $completed/$total');
+  },
+);
+```
+
 ### Using Proxies
 
 #### Generic Proxy
@@ -198,6 +239,12 @@ youtube_transcript_api dQw4w9WgXcQ -f srt -o subtitle.srt
 
 # Multiple languages with fallback
 youtube_transcript_api dQw4w9WgXcQ -l de,en,fr
+
+# Fetch multiple videos and save to a directory
+youtube_transcript_api --batch dQw4w9WgXcQ,6-87bwBCyos -o transcripts/ --show-progress
+
+# Fetch from a file of video IDs with limited concurrency
+youtube_transcript_api --batch-file video_ids.txt --max-concurrent 3 -f json
 ```
 
 ### CLI Options

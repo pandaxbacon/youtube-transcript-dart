@@ -12,6 +12,19 @@ void main(List<String> arguments) async {
       help: 'YouTube video ID (e.g., dQw4w9WgXcQ)',
       mandatory: false,
     )
+    ..addOption(
+      'batch',
+      help: 'Comma-separated list of YouTube video IDs for batch fetching',
+    )
+    ..addOption(
+      'batch-file',
+      help: 'Path to file containing YouTube video IDs (one per line)',
+    )
+    ..addOption(
+      'max-concurrent',
+      help: 'Maximum number of concurrent requests for batch operations',
+      defaultsTo: '5',
+    )
     ..addMultiOption(
       'languages',
       abbr: 'l',
@@ -47,6 +60,11 @@ void main(List<String> arguments) async {
       negatable: false,
     )
     ..addFlag(
+      'show-progress',
+      help: 'Display progress updates for batch operations',
+      negatable: false,
+    )
+    ..addFlag(
       'help',
       abbr: 'h',
       help: 'Show this help message',
@@ -61,25 +79,62 @@ void main(List<String> arguments) async {
       exit(0);
     }
 
-    // Get video ID from option or positional argument
-    String? videoId = results['video-id'] as String?;
-    if (videoId == null && results.rest.isNotEmpty) {
-      videoId = results.rest.first;
-    }
-
-    if (videoId == null) {
-      stderr.writeln('Error: Video ID is required');
-      _printUsage(parser);
-      exit(1);
-    }
-
-    final api = YouTubeTranscriptApi();
     final languages = (results['languages'] as List<String>)
         .expand((s) => s.split(','))
         .map((s) => s.trim())
         .toList();
+    final maxConcurrentValue = results['max-concurrent'] as String?;
+    final maxConcurrent = int.tryParse(maxConcurrentValue ?? '5');
+    if (maxConcurrent == null || maxConcurrent < 1) {
+      throw FormatException(
+        'Invalid value for --max-concurrent: ${maxConcurrentValue ?? "missing"} '
+        '(must be a positive integer)',
+      );
+    }
+
+    final batchArg = results['batch'] as String?;
+    final batchFile = results['batch-file'] as String?;
+    final showProgress = results['show-progress'] as bool;
+    final format = results['format'] as String;
+    final outputPath = results['output'] as String?;
+    final preserveFormatting = results['preserve-formatting'] as bool;
+
+    final api = YouTubeTranscriptApi();
 
     try {
+      if (batchArg != null || batchFile != null) {
+        final batchVideoIds = await _resolveBatchVideoIds(batchArg, batchFile);
+
+        if (batchVideoIds.isEmpty) {
+          stderr.writeln('Error: No video IDs provided for batch fetch');
+          exit(1);
+        }
+
+        await _fetchBatchTranscripts(
+          api,
+          batchVideoIds,
+          languages: languages,
+          format: format,
+          outputPath: outputPath,
+          preserveFormatting: preserveFormatting,
+          showProgress: showProgress,
+          maxConcurrent: maxConcurrent,
+        );
+        return;
+      }
+
+      // Get video ID from option or positional argument
+      String? videoId = results['video-id'] as String?;
+      if (videoId == null && results.rest.isNotEmpty) {
+        videoId = results.rest.first;
+      }
+
+      if (videoId == null) {
+        stderr.writeln('Error: Video ID is required');
+        _printUsage(parser);
+        exit(1);
+      }
+
       if (results['list'] as bool) {
         await _listTranscripts(api, videoId);
       } else {
@@ -87,11 +142,11 @@ void main(List<String> arguments) async {
           api,
           videoId,
           languages: languages,
-          format: results['format'] as String,
-          outputPath: results['output'] as String?,
+          format: format,
+          outputPath: outputPath,
           manualOnly: results['manual-only'] as bool,
           generatedOnly: results['generated-only'] as bool,
-          preserveFormatting: results['preserve-formatting'] as bool,
+          preserveFormatting: preserveFormatting,
         );
       }
     } finally {
@@ -113,7 +168,10 @@ void main(List<String> arguments) async {
 void _printUsage(ArgParser parser) {
   print('YouTube Transcript API CLI');
   print('');
-  print('Usage: youtube_transcript_api [options] <video-id>');
+  print(
+    'Usage: youtube_transcript_api [options] <video-id>'
+    ' | --batch <ids> | --batch-file <path>',
+  );
   print('');
   print('Options:');
   print(parser.usage);
@@ -130,6 +188,15 @@ void _printUsage(ArgParser parser) {
   print('');
   print('  # Save transcript as SRT file');
   print('  youtube_transcript_api dQw4w9WgXcQ -f srt -o output.srt');
+  print('');
+  print('  # Fetch multiple videos and save to directory');
+  print(
+    '  youtube_transcript_api --batch dQw4w9WgXcQ,6-87bwBCyos'
+    ' -o transcripts/',
+  );
+  print('');
+  print('  # Fetch from file with progress updates');
+  print('  youtube_transcript_api --batch-file video_ids.txt --show-progress');
 }
 
 Future<void> _listTranscripts(YouTubeTranscriptApi api, String videoId) async {
@@ -165,6 +232,87 @@ Future<void> _listTranscripts(YouTubeTranscriptApi api, String videoId) async {
       print('    Can translate to: $langs$more');
     }
     print('');
+  }
+}
+
+Future<List<String>> _resolveBatchVideoIds(
+  String? batchArg,
+  String? batchFile,
+) async {
+  final videoIds = <String>[];
+
+  if (batchArg != null && batchArg.isNotEmpty) {
+    videoIds.addAll(
+      batchArg.split(',').map((id) => id.trim()).where((id) => id.isNotEmpty),
+    );
+  }
+
+  if (batchFile != null) {
+    final file = File(batchFile);
+    if (!await file.exists()) {
+      throw FormatException('Batch file not found: $batchFile');
+    }
+
+    final lines = await file.readAsLines();
+    videoIds.addAll(
+      lines.map((line) => line.trim()).where((line) => line.isNotEmpty),
+    );
+  }
+
+  return videoIds;
+}
+
+Future<void> _fetchBatchTranscripts(
+  YouTubeTranscriptApi api,
+  List<String> videoIds, {
+  required List<String> languages,
+  required String format,
+  String? outputPath,
+  bool preserveFormatting = false,
+  bool showProgress = false,
+  required int maxConcurrent,
+}) async {
+  final progress = showProgress
+      ? (int completed, int total) {
+          stdout.writeln('Progress: $completed/$total');
+        }
+      : null;
+
+  final results = await api.fetchBatch(
+    videoIds,
+    languages: languages,
+    preserveFormatting: preserveFormatting,
+    maxConcurrent: maxConcurrent,
+    onProgress: progress,
+  );
+
+  Directory? outputDirectory;
+  if (outputPath != null) {
+    outputDirectory = Directory(outputPath);
+    await outputDirectory.create(recursive: true);
+  }
+
+  for (final entry in results.entries) {
+    final videoId = entry.key;
+    final result = entry.value;
+
+    if (result.isSuccess) {
+      final formatted = _formatTranscript(result.transcript!, format);
+      if (outputDirectory != null) {
+        final filePath = _buildOutputPath(
+          outputDirectory.path,
+          videoId,
+          format,
+        );
+        await File(filePath).writeAsString(formatted);
+        stdout.writeln('Transcript saved to: $filePath');
+      } else {
+        stdout.writeln('=== Transcript for $videoId ===');
+        stdout.writeln(formatted);
+      }
+    } else {
+      stderr.writeln('Error for $videoId: ${result.error}');
+    }
   }
 }
 
@@ -215,6 +363,14 @@ Future<void> _fetchTranscript(
   }
 }
 
+String _buildOutputPath(String directoryPath, String videoId, String format) {
+  final normalized = directoryPath.endsWith(Platform.pathSeparator)
+      ? directoryPath
+      : '$directoryPath${Platform.pathSeparator}';
+  final extension = _formatExtension(format);
+  return '$normalized$videoId.$extension';
+}
+
 String _formatTranscript(FetchedTranscript transcript, String format) {
   switch (format) {
     case 'text':
@@ -233,5 +389,21 @@ String _formatTranscript(FetchedTranscript transcript, String format) {
       return CsvFormatter().format(transcript);
     default:
       throw ArgumentError('Unknown format: $format');
+  }
+}
+
+String _formatExtension(String format) {
+  switch (format) {
+    case 'json':
+    case 'json-meta':
+      return 'json';
+    case 'vtt':
+      return 'vtt';
+    case 'srt':
+      return 'srt';
+    case 'csv':
+      return 'csv';
+    default:
+      return 'txt';
   }
 }
