@@ -168,7 +168,7 @@ class InvalidCookiesException extends TranscriptException {
         );
 }
 
-/// Thrown when the PoToken (Proof of Origin token) is required.
+/// Thrown when a PoToken (Proof of Origin token) is required.
 ///
 /// This is a recent YouTube anti-bot protection measure. Some videos require
 /// additional authentication tokens to access transcripts.
@@ -250,4 +250,35 @@ class FailedToCreateConsentCookieException extends TranscriptException {
           'YouTube is requiring a consent cookie which could not be created automatically.',
           videoId: videoId,
         );
+}
+
+/// Thrown when an HTTP request to YouTube fails.
+///
+/// Wraps the original HTTP error details (status code, response body)
+/// for debugging. Unlike simpler exceptions, this preserves the full
+/// HTTP error context.
+class YouTubeRequestFailedException extends TranscriptException {
+  /// The HTTP status code that caused the failure.
+  final int statusCode;
+
+  /// The response body, if available.
+  final String? responseBody;
+
+  YouTubeRequestFailedException({
+    required String videoId,
+    required this.statusCode,
+    this.responseBody,
+  }) : super(
+          'Request to YouTube failed (HTTP $statusCode)',
+          videoId: videoId,
+        );
+
+  @override
+  String toString() {
+    final buffer = StringBuffer('YouTubeRequestFailedException: $message');
+    if (responseBody != null) {
+      buffer.write('\nResponse: $responseBody');
+    }
+    return buffer.toString();
+  }
 }
