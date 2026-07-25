@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2026-07-25
+
+### Added
+
+- **CLI proxy support:** `--http-proxy`, `--https-proxy`, `--webshare-proxy-username`,
+  `--webshare-proxy-password` flags for using proxies from the command line.
+- **CLI `--translate` flag:** Translate transcripts to a target language.
+- **CLI multiple video IDs:** Support for multiple positional video ID arguments.
+- **CLI `--version` flag:** Print the current version.
+- **CLI `--cookies` flag:** Reserved for future cookie-based authentication.
+
+### Changed
+
+- CLI now supports batch processing of multiple video IDs.
+- Errors for individual video failures are reported without stopping the batch.
+
 ## [1.0.6] - 2026-07-25
 
 ### Added
