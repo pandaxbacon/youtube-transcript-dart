@@ -291,11 +291,13 @@ void _printUsage(ArgParser parser) {
   print('');
   print('  # Use a proxy');
   print(
-      '  youtube_transcript_api dQw4w9WgXcQ --http-proxy http://user:pass@proxy:8080');
+    '  youtube_transcript_api dQw4w9WgXcQ --http-proxy http://user:pass@proxy:8080',
+  );
   print('');
   print('  # Use Webshare proxy');
   print(
-      '  youtube_transcript_api dQw4w9WgXcQ --webshare-proxy-username myuser --webshare-proxy-password mypass');
+    '  youtube_transcript_api dQw4w9WgXcQ --webshare-proxy-username myuser --webshare-proxy-password mypass',
+  );
   print('');
   print('  # Save transcript as SRT file');
   print('  youtube_transcript_api dQw4w9WgXcQ -f srt -o output.srt');
