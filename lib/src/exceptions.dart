@@ -1,4 +1,5 @@
 /// Base exception for all transcript-related errors.
+library;
 
 import 'http/proxy_config.dart';
 
@@ -114,7 +115,8 @@ class RequestBlockedException extends TranscriptException {
     final buffer = StringBuffer();
     if (statusCode != null) {
       buffer.write(
-          'RequestBlockedException: $message (HTTP $statusCode) (videoId: $videoId)');
+        'RequestBlockedException: $message (HTTP $statusCode) (videoId: $videoId)',
+      );
     } else {
       buffer.write(super.toString());
     }
