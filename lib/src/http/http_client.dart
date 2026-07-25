@@ -30,6 +30,9 @@ class TranscriptHttpClient {
   /// Stored cookies keyed by domain.
   final Map<String, String> _cookies = {};
 
+  /// Shared HTTP client for proxy requests to enable connection reuse.
+  io.HttpClient? _sharedClient;
+
   /// Creates a new HTTP client.
   ///
   /// [proxyConfig] - Optional proxy configuration.
@@ -176,7 +179,8 @@ class TranscriptHttpClient {
     // or direct configuration.
 
     final uri = Uri.parse(url);
-    final client = io.HttpClient();
+    _sharedClient ??= io.HttpClient();
+    final client = _sharedClient!;
 
     try {
       // Configure proxy if available
@@ -243,13 +247,14 @@ class TranscriptHttpClient {
         headers: headersMap,
       );
     } finally {
-      client.close();
+      // Don't close the shared client — connection reuse improves performance
     }
   }
 
   /// Closes the HTTP client and releases resources.
   void close() {
     _customClient?.close();
+    _sharedClient?.close();
   }
 
   /// Executes a request with automatic retry on HTTP 429 (rate limiting).
