@@ -182,3 +182,17 @@ class PoTokenRequiredException extends TranscriptException {
           videoId: videoId,
         );
 }
+
+/// Thrown when YouTube's EU consent cookie cannot be created.
+///
+/// YouTube requires consent for cookie usage in EU regions. The library
+/// automatically handles this by setting a CONSENT cookie, but if the
+/// required form data cannot be found, this exception is thrown.
+class FailedToCreateConsentCookieException extends TranscriptException {
+  FailedToCreateConsentCookieException(String videoId)
+      : super(
+          'Failed to automatically give consent to saving cookies. '
+          'YouTube is requiring a consent cookie which could not be created automatically.',
+          videoId: videoId,
+        );
+}

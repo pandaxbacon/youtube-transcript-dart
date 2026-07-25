@@ -20,12 +20,15 @@ class HttpResponse {
 
 /// HTTP client for making requests to YouTube.
 ///
-/// Supports proxy configuration and custom headers.
+/// Supports proxy configuration, cookie storage, and custom headers.
 class TranscriptHttpClient {
   final ProxyConfig? proxyConfig;
   final Map<String, String> defaultHeaders;
   final Duration timeout;
   final http.Client? _customClient;
+
+  /// Stored cookies keyed by domain.
+  final Map<String, String> _cookies = {};
 
   /// Creates a new HTTP client.
   ///
@@ -52,11 +55,17 @@ class TranscriptHttpClient {
     Map<String, String>? headers,
     String? body,
   }) async {
-    final mergedHeaders = {
+    final mergedHeaders = <String, String>{
       ...defaultHeaders,
       if (proxyConfig != null) ...proxyConfig!.getHeaders(),
       ...?headers,
     };
+
+    // Add stored cookies
+    final cookieHeader = _buildCookieHeader(url);
+    if (cookieHeader != null) {
+      mergedHeaders['Cookie'] = cookieHeader;
+    }
 
     http.Response response;
 
@@ -81,6 +90,8 @@ class TranscriptHttpClient {
             .timeout(timeout);
       }
 
+      _storeCookiesFromResponse(response.headers['set-cookie']);
+
       return HttpResponse(
         statusCode: response.statusCode,
         body: response.body,
@@ -97,11 +108,17 @@ class TranscriptHttpClient {
 
   /// Makes a GET request to the specified URL.
   Future<HttpResponse> get(String url, {Map<String, String>? headers}) async {
-    final mergedHeaders = {
+    final mergedHeaders = <String, String>{
       ...defaultHeaders,
       if (proxyConfig != null) ...proxyConfig!.getHeaders(),
       ...?headers,
     };
+
+    // Add stored cookies
+    final cookieHeader = _buildCookieHeader(url);
+    if (cookieHeader != null) {
+      mergedHeaders['Cookie'] = cookieHeader;
+    }
 
     http.Response response;
 
@@ -120,6 +137,8 @@ class TranscriptHttpClient {
             .get(Uri.parse(url), headers: mergedHeaders)
             .timeout(timeout);
       }
+
+      _storeCookiesFromResponse(response.headers['set-cookie']);
 
       return HttpResponse(
         statusCode: response.statusCode,
@@ -225,5 +244,49 @@ class TranscriptHttpClient {
   /// Closes the HTTP client and releases resources.
   void close() {
     _customClient?.close();
+  }
+
+  /// Sets a cookie for the given domain.
+  ///
+  /// Used for consent cookie handling and other cookie-based features.
+  void setCookie(String name, String value, {String domain = '.youtube.com'}) {
+    _cookies['$name@$domain'] = value;
+  }
+
+  /// Sets cookies from a Set-Cookie header value.
+  void _storeCookiesFromResponse(String? setCookieHeader) {
+    if (setCookieHeader == null) return;
+    for (final cookie in setCookieHeader.split(',')) {
+      final parts = cookie.trim().split(';');
+      if (parts.isEmpty) continue;
+      final nameValue = parts[0].split('=');
+      if (nameValue.length >= 2) {
+        final name = nameValue[0].trim();
+        final value = nameValue.sublist(1).join('=').trim();
+        _cookies[name] = value;
+      }
+    }
+  }
+
+  /// Builds a Cookie header from stored cookies.
+  String? _buildCookieHeader(String url) {
+    if (_cookies.isEmpty) return null;
+    final uri = Uri.parse(url);
+    final domain = uri.host;
+    final cookies = <String>[];
+    for (final entry in _cookies.entries) {
+      // Check if cookie domain matches
+      if (entry.key.endsWith('@$domain') ||
+          entry.key.endsWith('@.youtube.com') &&
+              domain.endsWith('youtube.com')) {
+        final name = entry.key.split('@').first;
+        cookies.add('$name=${entry.value}');
+      }
+      // Also include simple-name cookies (no domain)
+      if (!entry.key.contains('@')) {
+        cookies.add('${entry.key}=${entry.value}');
+      }
+    }
+    return cookies.isEmpty ? null : cookies.join('; ');
   }
 }

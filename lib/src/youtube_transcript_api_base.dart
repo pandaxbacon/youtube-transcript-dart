@@ -102,13 +102,12 @@ class YouTubeTranscriptApi {
     try {
       // NEW: Use InnerTube API approach (matching Python implementation)
 
-      // Step 1: Fetch the YouTube video page HTML
+      // Step 1: Fetch the YouTube video page HTML (with EU consent cookie handling)
       final videoUrl = watchUrl.replaceAll('{video_id}', videoId);
-      final htmlResponse = await _httpClient.get(videoUrl);
-      _checkResponseStatus(htmlResponse.statusCode, videoId);
+      final html = await _fetchVideoPageHtml(videoUrl, videoId);
 
       // Step 2: Extract the InnerTube API key from the HTML
-      final apiKey = _extractInnertubeApiKey(htmlResponse.body, videoId);
+      final apiKey = _extractInnertubeApiKey(html, videoId);
 
       // Step 3: Make POST request to InnerTube API (pretending to be Android)
       final innertubeData = await _fetchInnertubeData(videoId, apiKey);
@@ -362,6 +361,43 @@ class YouTubeTranscriptApi {
     } catch (e) {
       return 'unknown';
     }
+  }
+
+  /// Fetches the YouTube video page HTML, handling EU consent cookie redirects.
+  ///
+  /// YouTube may redirect to a consent page for users in EU regions. This
+  /// method detects the consent form, automatically sets the required
+  /// CONSENT cookie, and re-fetches the page.
+  Future<String> _fetchVideoPageHtml(String url, String videoId) async {
+    var response = await _httpClient.get(url);
+    _checkResponseStatus(response.statusCode, videoId);
+
+    // Check for EU consent redirect
+    if (response.body.contains('action="https://consent.youtube.com/s"')) {
+      _createConsentCookie(response.body, videoId);
+      response = await _httpClient.get(url);
+      _checkResponseStatus(response.statusCode, videoId);
+
+      // If still redirected, consent handling failed
+      if (response.body.contains('action="https://consent.youtube.com/s"')) {
+        throw FailedToCreateConsentCookieException(videoId);
+      }
+    }
+
+    return response.body;
+  }
+
+  /// Extracts the consent form's 'v' value and sets the CONSENT cookie.
+  ///
+  /// YouTube's EU consent page contains a form with a hidden 'v' field.
+  /// We extract this value and set a CONSENT=YES+<value> cookie to bypass
+  /// the consent page on subsequent requests.
+  void _createConsentCookie(String html, String videoId) {
+    final match = RegExp(r'name="v" value="(.*?)"').firstMatch(html);
+    if (match == null || match.group(1) == null) {
+      throw FailedToCreateConsentCookieException(videoId);
+    }
+    _httpClient.setCookie('CONSENT', 'YES+${match.group(1)}');
   }
 
   /// Closes the HTTP client and releases resources.
