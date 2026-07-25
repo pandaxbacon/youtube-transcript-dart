@@ -56,7 +56,8 @@ export 'src/exceptions.dart'
         PoTokenRequiredException,
         FailedToCreateConsentCookieException,
         VideoUnplayableException,
-        AgeRestrictedException;
+        AgeRestrictedException,
+        YouTubeRequestFailedException;
 
 // HTTP & Proxy
 export 'src/http/http_client.dart';
