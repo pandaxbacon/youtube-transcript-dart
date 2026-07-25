@@ -38,13 +38,13 @@ class TranscriptHttpClient {
     Map<String, String>? defaultHeaders,
     this.timeout = const Duration(seconds: 30),
     http.Client? customClient,
-  }) : defaultHeaders = {
-         'User-Agent':
-             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-         'Accept-Language': 'en-US,en;q=0.9',
-         ...?defaultHeaders,
-       },
-       _customClient = customClient;
+  })  : defaultHeaders = {
+          'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept-Language': 'en-US,en;q=0.9',
+          ...?defaultHeaders,
+        },
+        _customClient = customClient;
 
   /// Makes a POST request to the specified URL.
   Future<HttpResponse> post(

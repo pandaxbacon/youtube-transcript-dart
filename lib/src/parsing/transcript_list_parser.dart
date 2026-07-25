@@ -88,8 +88,7 @@ class TranscriptListParser {
     required Future<FetchedTranscript> Function(
       String url,
       bool preserveFormatting,
-    )
-    fetchFunction,
+    ) fetchFunction,
   }) {
     try {
       // captionsJson IS the playerCaptionsTracklistRenderer

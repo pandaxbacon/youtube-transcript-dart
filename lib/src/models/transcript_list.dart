@@ -49,9 +49,8 @@ class TranscriptList extends IterableBase<Transcript> {
     throw NoTranscriptFoundException(
       videoId: videoId,
       requestedLanguages: languages,
-      availableLanguages: transcripts
-          .map((t) => t.languageCode)
-          .toList(growable: false),
+      availableLanguages:
+          transcripts.map((t) => t.languageCode).toList(growable: false),
     );
   }
 

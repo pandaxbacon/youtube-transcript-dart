@@ -34,9 +34,8 @@ class TranscriptParser {
         }
 
         final start = double.tryParse(startStr);
-        final duration = durationStr != null
-            ? double.tryParse(durationStr)
-            : 0.0;
+        final duration =
+            durationStr != null ? double.tryParse(durationStr) : 0.0;
 
         if (start == null) {
           continue;
@@ -114,12 +113,11 @@ class TranscriptParser {
         .replaceAll('&nbsp;', ' ')
         // Decode numeric entities
         .replaceAllMapped(RegExp(r'&#(\d+);'), (match) {
-          final code = int.tryParse(match.group(1) ?? '');
-          return code != null ? String.fromCharCode(code) : match.group(0)!;
-        })
-        .replaceAllMapped(RegExp(r'&#x([0-9A-Fa-f]+);'), (match) {
-          final code = int.tryParse(match.group(1) ?? '', radix: 16);
-          return code != null ? String.fromCharCode(code) : match.group(0)!;
-        });
+      final code = int.tryParse(match.group(1) ?? '');
+      return code != null ? String.fromCharCode(code) : match.group(0)!;
+    }).replaceAllMapped(RegExp(r'&#x([0-9A-Fa-f]+);'), (match) {
+      final code = int.tryParse(match.group(1) ?? '', radix: 16);
+      return code != null ? String.fromCharCode(code) : match.group(0)!;
+    });
   }
 }

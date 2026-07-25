@@ -6,11 +6,11 @@ import 'package:youtube_transcript_api/youtube_transcript_api.dart';
 
 class _TestYouTubeTranscriptApi extends YouTubeTranscriptApi {
   _TestYouTubeTranscriptApi(this._fetchHandler)
-    : super(
-        httpClient: TranscriptHttpClient(
-          customClient: MockClient((_) async => http.Response('', 200)),
-        ),
-      );
+      : super(
+          httpClient: TranscriptHttpClient(
+            customClient: MockClient((_) async => http.Response('', 200)),
+          ),
+        );
 
   final Future<FetchedTranscript> Function(String videoId) _fetchHandler;
 
@@ -80,11 +80,14 @@ void main() {
       });
       addTearDown(api.dispose);
 
-      final results = await api.fetchBatch([
-        'AAAAAAAAAAA',
-        'BBBBBBBBBBB',
-        'CCCCCCCCCCC',
-      ], continueOnError: true);
+      final results = await api.fetchBatch(
+        [
+          'AAAAAAAAAAA',
+          'BBBBBBBBBBB',
+          'CCCCCCCCCCC',
+        ],
+        continueOnError: true,
+      );
 
       expect(results['AAAAAAAAAAA']!.isSuccess, isTrue);
       expect(results['CCCCCCCCCCC']!.isSuccess, isTrue);
@@ -111,10 +114,13 @@ void main() {
       addTearDown(api.dispose);
       final progress = <List<int>>[];
 
-      await api.fetchBatch([
-        'AAAAAAAAAAA',
-        'BBBBBBBBBBB',
-      ], onProgress: (completed, total) => progress.add([completed, total]));
+      await api.fetchBatch(
+        [
+          'AAAAAAAAAAA',
+          'BBBBBBBBBBB',
+        ],
+        onProgress: (completed, total) => progress.add([completed, total]),
+      );
 
       expect(
         progress,
@@ -139,11 +145,14 @@ void main() {
 
       final stopwatch = Stopwatch()..start();
 
-      await api.fetchBatch([
-        'AAAAAAAAAAA',
-        'BBBBBBBBBBB',
-        'CCCCCCCCCCC',
-      ], maxConcurrent: 2);
+      await api.fetchBatch(
+        [
+          'AAAAAAAAAAA',
+          'BBBBBBBBBBB',
+          'CCCCCCCCCCC',
+        ],
+        maxConcurrent: 2,
+      );
 
       stopwatch.stop();
 

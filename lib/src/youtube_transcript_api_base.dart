@@ -147,7 +147,7 @@ class YouTubeTranscriptApi {
         onProgress?.call(completed, total);
 
         if (!continueOnError) {
-          throw e;
+          rethrow;
         }
       }
     }
@@ -482,8 +482,10 @@ class YouTubeTranscriptApi {
     }
 
     final error = lastError ??
-        TranscriptFetchException('Failed to fetch transcript',
-            videoId: videoId);
+        TranscriptFetchException(
+          'Failed to fetch transcript',
+          videoId: videoId,
+        );
     return BatchTranscriptResult.failure(videoId, error);
   }
 

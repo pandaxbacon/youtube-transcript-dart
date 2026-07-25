@@ -32,7 +32,7 @@ class Transcript {
 
   /// Internal: Function to fetch the transcript content.
   final Future<FetchedTranscript> Function(String url, bool preserveFormatting)?
-  _fetchFunction;
+      _fetchFunction;
 
   Transcript({
     required this.videoId,
@@ -44,7 +44,7 @@ class Transcript {
     this.transcriptUrl,
     this.translationLanguageCode,
     Future<FetchedTranscript> Function(String url, bool preserveFormatting)?
-    fetchFunction,
+        fetchFunction,
   }) : _fetchFunction = fetchFunction;
 
   /// Fetches the actual transcript content.
