@@ -14,6 +14,14 @@ abstract class ProxyConfig {
   /// When using rotating proxies, a retry triggers an IP rotation so the
   /// next attempt may use a different, unblocked IP.
   int get retriesWhenBlocked => 0;
+
+  /// Whether to prevent the HTTP client from keeping TCP connections alive.
+  ///
+  /// When using rotating proxies, keeping connections alive can prevent
+  /// IP rotation between requests. Setting this to true adds a
+  /// `Connection: close` header so each request gets a fresh connection
+  /// and potentially a new proxy IP.
+  bool get preventKeepingConnectionsAlive => false;
 }
 
 /// Configuration for using Webshare rotating residential proxies.
@@ -54,6 +62,9 @@ class WebshareProxyConfig extends ProxyConfig {
 
   @override
   int get retriesWhenBlocked => retries;
+
+  @override
+  bool get preventKeepingConnectionsAlive => true;
 
   String _buildProxyUrl() {
     final auth = '$username:$password';
