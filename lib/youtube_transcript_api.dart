@@ -54,7 +54,9 @@ export 'src/exceptions.dart'
         TranscriptParseException,
         InvalidCookiesException,
         PoTokenRequiredException,
-        FailedToCreateConsentCookieException;
+        FailedToCreateConsentCookieException,
+        VideoUnplayableException,
+        AgeRestrictedException;
 
 // HTTP & Proxy
 export 'src/http/http_client.dart';
