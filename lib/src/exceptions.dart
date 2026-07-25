@@ -168,7 +168,7 @@ class InvalidCookiesException extends TranscriptException {
         );
 }
 
-/// Thrown when a PoToken (Proof of Origin token) is required.
+/// Thrown when the PoToken (Proof of Origin token) is required.
 ///
 /// This is a recent YouTube anti-bot protection measure. Some videos require
 /// additional authentication tokens to access transcripts.
@@ -179,6 +179,61 @@ class PoTokenRequiredException extends TranscriptException {
           'This is a recent anti-bot protection measure. '
           'Consider using the Python library which may have updated workarounds, '
           'or try accessing the transcript directly on YouTube.',
+          videoId: videoId,
+        );
+}
+
+/// Thrown when the YouTube video is unplayable for a specific reason.
+///
+/// Unlike [VideoUnavailableException] which is thrown when the video simply
+/// doesn't exist, this exception provides context about _why_ the video
+/// cannot be played (e.g., region restrictions, content warnings, etc.).
+class VideoUnplayableException extends TranscriptException {
+  /// The main reason the video is unplayable (from YouTube's playability status).
+  final String? reason;
+
+  /// Additional sub-reasons (from YouTube's error screen).
+  final List<String> subReasons;
+
+  VideoUnplayableException({
+    required String videoId,
+    this.reason,
+    this.subReasons = const [],
+  }) : super(
+          _buildMessage(videoId, reason, subReasons),
+          videoId: videoId,
+        );
+
+  static String _buildMessage(
+    String videoId,
+    String? reason,
+    List<String> subReasons,
+  ) {
+    final buffer = StringBuffer('The video is unplayable');
+    if (reason != null) {
+      buffer.write(': $reason');
+    }
+    if (subReasons.isNotEmpty) {
+      buffer.write('\nAdditional details:');
+      for (final sub in subReasons) {
+        buffer.write('\n  - $sub');
+      }
+    }
+    return buffer.toString();
+  }
+}
+
+/// Thrown when the YouTube video is age-restricted and requires authentication.
+///
+/// Age-restricted videos cannot be accessed without logging in. YouTube has
+/// made cookie-based authentication challenging for automated tools, so this
+/// exception indicates that the video is age-gated and currently inaccessible.
+class AgeRestrictedException extends TranscriptException {
+  AgeRestrictedException(String videoId)
+      : super(
+          'This video is age-restricted. Authentication is required to access '
+          'age-restricted videos. Cookie-based authentication is not currently '
+          'supported.',
           videoId: videoId,
         );
 }

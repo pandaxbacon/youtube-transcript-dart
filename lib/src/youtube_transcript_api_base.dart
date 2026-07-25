@@ -230,7 +230,7 @@ class YouTubeTranscriptApi {
         throw RequestBlockedException(videoId);
       }
       if (reason?.contains('inappropriate') ?? false) {
-        throw VideoUnavailableException(videoId); // Age restricted
+        throw AgeRestrictedException(videoId);
       }
     }
 
@@ -241,10 +241,26 @@ class YouTubeTranscriptApi {
       throw VideoUnavailableException(videoId);
     }
 
-    // Generic error
-    throw TranscriptFetchException(
-      'Video is not playable: ${reason ?? "Unknown reason"}',
+    // For any other non-OK playability status, extract sub-reasons
+    final subreasons = <String>[];
+    final errorScreen =
+        playabilityStatus['errorScreen'] as Map<String, dynamic>?;
+    final renderer =
+        errorScreen?['playerErrorMessageRenderer'] as Map<String, dynamic>?;
+    final subreasonRuns = renderer?['subreason']?['runs'] as List<dynamic>?;
+    if (subreasonRuns != null) {
+      for (final run in subreasonRuns) {
+        if (run is Map<String, dynamic>) {
+          final text = run['text'] as String?;
+          if (text != null) subreasons.add(text);
+        }
+      }
+    }
+
+    throw VideoUnplayableException(
       videoId: videoId,
+      reason: reason ?? 'Unknown reason',
+      subReasons: subreasons,
     );
   }
 

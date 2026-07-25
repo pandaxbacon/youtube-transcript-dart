@@ -253,7 +253,7 @@ void main() {
         api.dispose();
       });
 
-      test('throws VideoUnavailableException for age restricted', () async {
+      test('throws AgeRestrictedException for age restricted', () async {
         var requestCount = 0;
         final mockClient = MockClient((request) async {
           requestCount++;
@@ -277,7 +277,7 @@ void main() {
 
         await expectLater(
           () async => await api.list('dQw4w9WgXcQ'),
-          throwsA(isA<VideoUnavailableException>()),
+          throwsA(isA<AgeRestrictedException>()),
         );
 
         api.dispose();
@@ -344,7 +344,7 @@ void main() {
       });
 
       test(
-        'throws TranscriptFetchException for other playability errors',
+        'throws VideoUnplayableException for other playability errors',
         () async {
           var requestCount = 0;
           final mockClient = MockClient((request) async {
@@ -369,7 +369,7 @@ void main() {
 
           await expectLater(
             () async => await api.list('dQw4w9WgXcQ'),
-            throwsA(isA<TranscriptFetchException>()),
+            throwsA(isA<VideoUnplayableException>()),
           );
 
           api.dispose();
