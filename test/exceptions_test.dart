@@ -76,5 +76,83 @@ void main() {
       expect(exception.cause, equals(cause));
       expect(exception.toString(), contains('Caused by'));
     });
+
+    test('AgeRestrictedException formats correctly', () {
+      final exception = AgeRestrictedException('test123');
+
+      expect(exception.videoId, equals('test123'));
+      expect(exception.toString(), contains('age-restricted'));
+    });
+
+    test('VideoUnplayableException with reason and subReasons', () {
+      final exception = VideoUnplayableException(
+        videoId: 'test123',
+        reason: 'Copyright claim',
+        subReasons: ['Music detected', 'Region locked'],
+      );
+
+      expect(exception.reason, equals('Copyright claim'));
+      expect(exception.subReasons, equals(['Music detected', 'Region locked']));
+      expect(exception.toString(), contains('Copyright claim'));
+      expect(exception.toString(), contains('Music detected'));
+      expect(exception.toString(), contains('Region locked'));
+    });
+
+    test('VideoUnplayableException without reason defaults', () {
+      final exception = VideoUnplayableException(
+        videoId: 'test123',
+        subReasons: [],
+      );
+
+      expect(exception.reason, isNull);
+      expect(exception.toString(), contains('unplayable'));
+    });
+
+    test('YouTubeRequestFailedException includes statusCode', () {
+      final exception = YouTubeRequestFailedException(
+        videoId: 'test123',
+        statusCode: 500,
+        responseBody: 'Internal Server Error',
+      );
+
+      expect(exception.statusCode, equals(500));
+      expect(exception.responseBody, equals('Internal Server Error'));
+      expect(exception.toString(), contains('HTTP 500'));
+      expect(exception.toString(), contains('Internal Server Error'));
+    });
+
+    test('FailedToCreateConsentCookieException formats correctly', () {
+      final exception = FailedToCreateConsentCookieException('test123');
+
+      expect(exception.toString(), contains('consent'));
+      expect(exception.toString(), contains('cookie'));
+    });
+
+    test('RequestBlockedException withProxyConfig shows Webshare guidance', () {
+      final exception = RequestBlockedException('test123')
+          .withProxyConfig(WebshareProxyConfig(username: 'u', password: 'p'));
+
+      final msg = exception.toString();
+      expect(msg, contains('Webshare'));
+      expect(msg, contains('Residential'));
+    });
+
+    test('RequestBlockedException withProxyConfig shows generic proxy guidance',
+        () {
+      final exception = RequestBlockedException('test123')
+          .withProxyConfig(GenericProxyConfig(httpUrl: 'http://proxy:8080'));
+
+      final msg = exception.toString();
+      expect(msg, contains('proxy'));
+    });
+
+    test('InvalidVideoIdException suggests using video ID not URL', () {
+      final exception =
+          InvalidVideoIdException('https://www.youtube.com/watch?v=1234');
+
+      expect(exception.toString(), contains('video ID'));
+      expect(exception.toString(), contains('NOT the URL'));
+      expect(exception.toString(), contains('api.fetch("1234")'));
+    });
   });
 }
