@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-07-25
+
+### Added
+
+- **Consent cookie handling:** Automatically detects and bypasses YouTube's EU consent page
+  (`consent.youtube.com`). When a consent redirect is detected, the library now extracts the
+  required form token and sets a `CONSENT=YES+<token>` cookie, then re-fetches the page.
+- New `FailedToCreateConsentCookieException` for when consent cookie creation fails.
+- Cookie storage support in `TranscriptHttpClient` with `setCookie()` method.
+
+### Changed
+
+- `TranscriptHttpClient` now stores cookies from `Set-Cookie` response headers and sends stored
+  cookies in subsequent requests to matching domains.
+
 ## [1.0.0] - 2024-12-02
 
 ### 🎉 Initial Release

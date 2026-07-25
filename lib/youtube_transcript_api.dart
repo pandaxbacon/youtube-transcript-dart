@@ -53,7 +53,8 @@ export 'src/exceptions.dart'
         TranscriptFetchException,
         TranscriptParseException,
         InvalidCookiesException,
-        PoTokenRequiredException;
+        PoTokenRequiredException,
+        FailedToCreateConsentCookieException;
 
 // HTTP & Proxy
 export 'src/http/http_client.dart';
