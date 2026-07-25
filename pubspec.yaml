@@ -1,6 +1,6 @@
 name: youtube_transcript_api
 description: Fetch YouTube transcripts/subtitles without API keys. Supports auto-generated & manual transcripts, translations, multiple formats (JSON/VTT/SRT), proxy support, and CLI.
-version: 1.0.2
+version: 1.0.3
 homepage: https://github.com/pandaxbacon/youtube-transcript-dart
 repository: https://github.com/pandaxbacon/youtube-transcript-dart
 issue_tracker: https://github.com/pandaxbacon/youtube-transcript-dart/issues
