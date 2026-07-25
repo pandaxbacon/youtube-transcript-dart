@@ -36,7 +36,8 @@ class WebshareProxyConfig extends ProxyConfig {
   final String password;
 
   /// Optional location filter (e.g., 'US', 'DE').
-  final String? location;
+  /// You can also pass a list to filter by multiple locations.
+  final List<String>? locations;
 
   /// The Webshare proxy host (defaults to p.webshare.io).
   final String host;
@@ -54,11 +55,30 @@ class WebshareProxyConfig extends ProxyConfig {
   WebshareProxyConfig({
     required this.username,
     required this.password,
-    this.location,
+    this.locations,
     this.host = 'p.webshare.io',
     this.port = 80,
     this.retries = 10,
   });
+
+  /// Convenience constructor that accepts a single location string.
+  factory WebshareProxyConfig.withLocation({
+    required String username,
+    required String password,
+    String? location,
+    String host = 'p.webshare.io',
+    int port = 80,
+    int retries = 10,
+  }) {
+    return WebshareProxyConfig(
+      username: username,
+      password: password,
+      locations: location != null ? [location] : null,
+      host: host,
+      port: port,
+      retries: retries,
+    );
+  }
 
   @override
   int get retriesWhenBlocked => retries;
@@ -67,9 +87,34 @@ class WebshareProxyConfig extends ProxyConfig {
   bool get preventKeepingConnectionsAlive => true;
 
   String _buildProxyUrl() {
-    final auth = '$username:$password';
-    final locationSuffix = location != null ? '-country-$location' : '';
-    return 'http://$auth@$host$locationSuffix:$port';
+    // Build username with optional location filter and -rotate suffix.
+    // Format: username-country-XX-rotate:password@p.webshare.io:port
+    //
+    // The -rotate suffix tells Webshare to cycle IPs on each connection.
+    // Country filter (e.g. -country-US) narrows the IP pool to a region.
+    var effectiveUsername = username;
+
+    // Remove existing -rotate suffix if present (prevents duplication)
+    const rotateSuffix = '-rotate';
+    if (effectiveUsername.endsWith(rotateSuffix)) {
+      effectiveUsername = effectiveUsername.substring(
+        0,
+        effectiveUsername.length - rotateSuffix.length,
+      );
+    }
+
+    // Build location filter segment
+    final locationSegments = <String>[];
+    if (locations != null) {
+      for (final loc in locations!) {
+        locationSegments.add('-country-${loc.toUpperCase()}');
+      }
+    }
+    final locationFilter = locationSegments.join();
+
+    final proxyAuth =
+        '$effectiveUsername$locationFilter$rotateSuffix:$password';
+    return 'http://$proxyAuth@$host:$port';
   }
 
   @override
@@ -80,7 +125,7 @@ class WebshareProxyConfig extends ProxyConfig {
 
   @override
   String toString() {
-    return 'WebshareProxyConfig(username: $username, host: $host, port: $port, location: $location)';
+    return 'WebshareProxyConfig(username: $username, host: $host, port: $port, locations: $locations)';
   }
 }
 

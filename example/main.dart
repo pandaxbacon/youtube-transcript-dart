@@ -132,7 +132,7 @@ Future<void> proxyExample() async {
   // Example 2: Webshare proxy
   print('Using Webshare proxy configuration:');
   api = YouTubeTranscriptApi(
-    proxyConfig: WebshareProxyConfig(
+    proxyConfig: WebshareProxyConfig.withLocation(
       username: 'your-username',
       password: 'your-password',
       location: 'US',
