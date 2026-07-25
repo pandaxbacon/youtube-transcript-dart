@@ -71,23 +71,26 @@ class TranscriptHttpClient {
 
     try {
       if (_customClient != null) {
-        // Use custom client (for testing)
-        response = await _customClient!
-            .post(Uri.parse(url), headers: mergedHeaders, body: body)
-            .timeout(timeout);
+        response = await _executeWithRetry(
+          () => _customClient!
+              .post(Uri.parse(url), headers: mergedHeaders, body: body)
+              .timeout(timeout),
+        );
       } else if (proxyConfig != null) {
-        // Use proxy
-        response = await _makeProxiedRequest(
-          url,
-          mergedHeaders,
-          method: 'POST',
-          body: body,
+        response = await _executeWithRetry(
+          () => _makeProxiedRequest(
+            url,
+            mergedHeaders,
+            method: 'POST',
+            body: body,
+          ),
         );
       } else {
-        // Direct request
-        response = await http
-            .post(Uri.parse(url), headers: mergedHeaders, body: body)
-            .timeout(timeout);
+        response = await _executeWithRetry(
+          () => http
+              .post(Uri.parse(url), headers: mergedHeaders, body: body)
+              .timeout(timeout),
+        );
       }
 
       _storeCookiesFromResponse(response.headers['set-cookie']);
@@ -124,20 +127,21 @@ class TranscriptHttpClient {
 
     try {
       if (_customClient != null) {
-        // Use custom client (for testing)
-        response = await _customClient!
-            .get(Uri.parse(url), headers: mergedHeaders)
-            .timeout(timeout);
+        response = await _executeWithRetry(
+          () => _customClient!
+              .get(Uri.parse(url), headers: mergedHeaders)
+              .timeout(timeout),
+        );
       } else if (proxyConfig != null) {
-        // Use proxy
-        response = await _makeProxiedRequest(url, mergedHeaders, method: 'GET');
+        response = await _executeWithRetry(
+          () => _makeProxiedRequest(url, mergedHeaders, method: 'GET'),
+        );
       } else {
-        // Direct request
-        response = await http
-            .get(Uri.parse(url), headers: mergedHeaders)
-            .timeout(timeout);
+        response = await _executeWithRetry(
+          () =>
+              http.get(Uri.parse(url), headers: mergedHeaders).timeout(timeout),
+        );
       }
-
       _storeCookiesFromResponse(response.headers['set-cookie']);
 
       return HttpResponse(
@@ -244,6 +248,34 @@ class TranscriptHttpClient {
   /// Closes the HTTP client and releases resources.
   void close() {
     _customClient?.close();
+  }
+
+  /// Executes a request with automatic retry on HTTP 429 (rate limiting).
+  ///
+  /// When a proxy is configured with [ProxyConfig.retriesWhenBlocked] > 0,
+  /// requests returning HTTP 429 are automatically retried with exponential
+  /// backoff. Each retry rotates the proxy IP (for rotating proxies like
+  /// Webshare), so the next attempt may succeed.
+  Future<http.Response> _executeWithRetry(
+    Future<http.Response> Function() execute,
+  ) async {
+    final maxRetries = proxyConfig?.retriesWhenBlocked ?? 0;
+
+    for (var attempt = 0; attempt <= maxRetries; attempt++) {
+      final response = await execute();
+
+      if (response.statusCode == 429 && attempt < maxRetries) {
+        // Exponential backoff: 1s, 2s, 4s, 8s, ...
+        final delayMs = (1 << attempt) * 1000;
+        await Future.delayed(Duration(milliseconds: delayMs));
+        continue;
+      }
+
+      return response;
+    }
+
+    // Should not be reachable — last iteration always returns
+    throw io.HttpException('Request failed: max retries exceeded');
   }
 
   /// Sets a cookie for the given domain.

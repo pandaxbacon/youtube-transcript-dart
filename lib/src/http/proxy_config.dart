@@ -8,6 +8,12 @@ abstract class ProxyConfig {
 
   /// Returns custom headers to include in requests when using this proxy.
   Map<String, String> getHeaders() => {};
+
+  /// How many times to retry when a request is blocked (HTTP 429).
+  ///
+  /// When using rotating proxies, a retry triggers an IP rotation so the
+  /// next attempt may use a different, unblocked IP.
+  int get retriesWhenBlocked => 0;
 }
 
 /// Configuration for using Webshare rotating residential proxies.
@@ -30,13 +36,24 @@ class WebshareProxyConfig extends ProxyConfig {
   /// The Webshare proxy port (defaults to 80).
   final int port;
 
+  /// How many times to retry when a request is blocked (HTTP 429).
+  ///
+  /// Defaults to 10, which is appropriate for Webshare's rotating residential
+  /// proxies — each retry triggers an IP rotation so the next attempt uses a
+  /// different IP.
+  final int retries;
+
   WebshareProxyConfig({
     required this.username,
     required this.password,
     this.location,
     this.host = 'p.webshare.io',
     this.port = 80,
+    this.retries = 10,
   });
+
+  @override
+  int get retriesWhenBlocked => retries;
 
   String _buildProxyUrl() {
     final auth = '$username:$password';
