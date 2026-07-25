@@ -70,3 +70,4 @@ export 'src/formatters/json_formatter.dart';
 export 'src/formatters/vtt_formatter.dart';
 export 'src/formatters/srt_formatter.dart';
 export 'src/formatters/csv_formatter.dart';
+export 'src/formatters/formatter_loader.dart';

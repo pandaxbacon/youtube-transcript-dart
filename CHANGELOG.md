@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.8] - 2026-07-25
+
+### Added
+
+- **`PrettyPrintFormatter`:** New formatter for human-readable transcript dumps
+  using pretty-printed JSON. Useful for debugging and inspection.
+- **`FormatterLoader`:** Registry that loads formatters by type name
+  (e.g., `FormatterLoader.load('json')`). Supports all built-in formatters.
+- **`TranscriptFormatterExtension.formatAll()`:** Extension method to format
+  multiple transcripts at once.
+
 ## [1.0.6] - 2026-07-25
 
 ### Added
