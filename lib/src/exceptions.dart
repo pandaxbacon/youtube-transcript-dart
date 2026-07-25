@@ -1,4 +1,7 @@
 /// Base exception for all transcript-related errors.
+
+import 'http/proxy_config.dart';
+
 class TranscriptException implements Exception {
   final String message;
   final String? videoId;
@@ -97,19 +100,58 @@ class TooManyRequestsException extends TranscriptException {
 /// Thrown when the request is blocked by YouTube (e.g., bot detection).
 class RequestBlockedException extends TranscriptException {
   final int? statusCode;
+  ProxyConfig? _proxyConfig;
 
   RequestBlockedException(String videoId, {this.statusCode})
-      : super(
+      : _proxyConfig = null,
+        super(
           'The request was blocked by YouTube. This might be due to bot detection. Consider using a proxy',
           videoId: videoId,
         );
 
   @override
   String toString() {
+    final buffer = StringBuffer();
     if (statusCode != null) {
-      return 'RequestBlockedException: $message (HTTP $statusCode) (videoId: $videoId)';
+      buffer.write(
+          'RequestBlockedException: $message (HTTP $statusCode) (videoId: $videoId)');
+    } else {
+      buffer.write(super.toString());
     }
-    return super.toString();
+
+    // Add proxy-specific guidance
+    if (_proxyConfig is WebshareProxyConfig) {
+      buffer.write(
+        '\n\nYouTube is blocking your requests, despite using Webshare proxies. '
+        'Please make sure you have purchased "Residential" proxies and NOT '
+        '"Proxy Server" or "Static Residential", as those won\'t work as reliably. '
+        'The only reliable option is using "Residential" proxies (not "Static Residential"), '
+        'as this allows you to rotate through a pool of over 30M IPs.',
+      );
+    } else if (_proxyConfig is GenericProxyConfig) {
+      buffer.write(
+        '\n\nYouTube is blocking your requests, despite using a proxy. '
+        'Keep in mind that a proxy is just a way to hide your real IP, '
+        'but there is no guarantee that the proxy IP won\'t be blocked as well. '
+        'The most reliable way to prevent IP blocks is rotating through a large '
+        'pool of residential IPs, by using a provider like Webshare.',
+      );
+    }
+
+    return buffer.toString();
+  }
+
+  /// Attaches proxy configuration context to produce tailored error messages.
+  ///
+  /// When a proxy is in use, the error message includes specific guidance
+  /// based on the proxy type (Webshare, generic, or none).
+  RequestBlockedException withProxyConfig(ProxyConfig? proxyConfig) {
+    final copy = RequestBlockedException(
+      videoId ?? 'unknown',
+      statusCode: statusCode,
+    );
+    copy._proxyConfig = proxyConfig;
+    return copy;
   }
 }
 
@@ -126,7 +168,13 @@ class IpBlockedException extends RequestBlockedException {
 /// Thrown when the video ID is invalid.
 class InvalidVideoIdException extends TranscriptException {
   InvalidVideoIdException(String videoId)
-      : super('Invalid video ID format', videoId: videoId);
+      : super(
+          'You provided an invalid video ID. Make sure you are using the '
+          'video ID and NOT the URL!\n\n'
+          'Do NOT run: api.fetch("https://www.youtube.com/watch?v=1234")\n'
+          'Instead run: api.fetch("1234")',
+          videoId: videoId,
+        );
 }
 
 /// Thrown when there's an error fetching the transcript from YouTube.

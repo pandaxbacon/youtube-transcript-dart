@@ -62,7 +62,7 @@ void main() {
       final exception = InvalidVideoIdException('bad-id');
 
       expect(exception.videoId, equals('bad-id'));
-      expect(exception.toString(), contains('Invalid video ID'));
+      expect(exception.toString(), contains('invalid video ID'));
     });
 
     test('TranscriptFetchException includes cause', () {
